@@ -1,0 +1,7 @@
+import {
+  "username/from_json_str" @lib,
+}
+
+options(
+  "is-main": true,
+)

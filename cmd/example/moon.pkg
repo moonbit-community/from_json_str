@@ -1,0 +1,13 @@
+import {
+  "username/from_json_str" @from_json_str,
+}
+
+options(
+  "pre-build": [
+    {
+      "command": "set -o pipefail && cat $input | wasmer run --volume $mod_dir:$mod_dir $mod_dir | moonfmt - > $output",
+      "input": "input.mbt",
+      "output": "output.mbt",
+    },
+  ],
+)

@@ -1,0 +1,4 @@
+fn main {
+  let mut x = None
+  x = Some(1)
+}

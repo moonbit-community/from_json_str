@@ -1,0 +1,17 @@
+[package]
+name = 'username/from_json_str_codegen'
+version = '0.1.0'
+description = 'Prototype streaming FromJson deriver'
+
+[[module]]
+name = 'from_json_str_codegen'
+source = './_build/wasm/debug/build/username/from_json_str/cmd/codegen/codegen.wasm'
+abi = 'wasi'
+
+[module.interfaces]
+wasi = '0.1.0-unstable'
+
+[[command]]
+name = 'from_json_str_codegen'
+module = 'from_json_str_codegen'
+runner = 'wasi'

@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/core/list",
+  "moonbitlang/parser/attribute",
+  "moonbitlang/parser/basic",
+  "moonbitlang/parser/syntax",
+}
+
+import {
+  "moonbitlang/formatter",
+  "moonbitlang/parser",
+} for "test"

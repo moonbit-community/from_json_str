@@ -1,0 +1,11 @@
+import {
+  "Yoorkin/ArgParser",
+  "moonbitlang/x/fs",
+  "moonbitlang/formatter",
+  "moonbitlang/core/env",
+  "moonbitlang/core/ref",
+}
+
+options(
+  "is-main": true,
+)

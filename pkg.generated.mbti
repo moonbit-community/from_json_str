@@ -1,0 +1,73 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "username/from_json_str"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn[T : FromJson] from_json(Json, path? : JsonPath) -> T raise JsonDecodeError
+
+pub fn[T : FromJson] from_str(StringView, max_nesting_depth? : Int) -> T raise JsonDecodeError
+
+// Errors
+pub(all) suberror JsonDecodeError {
+  JsonDecodeError((JsonPath, String))
+} derive(Eq, @debug.Debug)
+pub impl Show for JsonDecodeError
+
+// Types and methods
+pub struct Decoder {
+  // private fields
+}
+pub fn Decoder::begin_array(Self, JsonPath) -> Unit raise JsonDecodeError
+pub fn Decoder::begin_object(Self, JsonPath) -> Unit raise JsonDecodeError
+pub fn Decoder::finish(Self, path? : JsonPath) -> Unit raise JsonDecodeError
+pub fn Decoder::new(StringView, max_nesting_depth? : Int) -> Self
+pub fn Decoder::next_array_value(Self, JsonPath) -> Bool raise JsonDecodeError
+pub fn Decoder::next_object_key(Self, JsonPath) -> String? raise JsonDecodeError
+pub fn Decoder::read_bool(Self, JsonPath) -> Bool raise JsonDecodeError
+pub fn Decoder::read_double(Self, JsonPath) -> Double raise JsonDecodeError
+pub fn Decoder::read_int(Self, JsonPath) -> Int raise JsonDecodeError
+pub fn Decoder::read_json(Self, JsonPath) -> Json raise JsonDecodeError
+pub fn Decoder::read_null(Self, JsonPath) -> Unit raise JsonDecodeError
+pub fn Decoder::read_string(Self, JsonPath) -> String raise JsonDecodeError
+pub fn Decoder::read_variant_tag(Self, JsonPath) -> VariantTag raise JsonDecodeError
+pub fn Decoder::skip_value(Self, JsonPath) -> Unit raise JsonDecodeError
+
+pub(all) enum JsonPath {
+  Root
+  Key(JsonPath, mut key~ : String)
+  Index(JsonPath, mut index~ : Int)
+} derive(Eq, @debug.Debug)
+pub fn JsonPath::add_index(Self, Int) -> Self
+pub fn JsonPath::add_key(Self, String) -> Self
+pub impl Show for JsonPath
+
+pub(all) struct S[T] {
+  x : T
+} derive(Eq, @debug.Debug)
+pub impl[T : Show] Show for S[T]
+pub impl[T : FromJson] FromJson for S[T]
+
+pub(all) enum VariantTag {
+  Plain(String)
+  Payload(String)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+pub(open) trait FromJson {
+  from_json(Json, JsonPath) -> Self raise JsonDecodeError
+  decode_json(Decoder, JsonPath) -> Self raise JsonDecodeError = _
+}
+pub impl FromJson for Unit
+pub impl FromJson for Bool
+pub impl FromJson for Int
+pub impl FromJson for Double
+pub impl FromJson for String
+pub impl[X : FromJson] FromJson for Array[X]
+pub impl FromJson for Json
+pub impl[V : FromJson] FromJson for Map[String, V]
+

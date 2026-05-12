@@ -1,0 +1,13 @@
+import {
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/formatter",
+  "moonbitlang/parser",
+  "peter-jerry-ye/wasi",
+  "username/from_json_str/codegen" @from_json_str_codegen,
+}
+
+options(
+  "is-main": true,
+  link: { "wasm": { "export-memory-name": "memory" } },
+)

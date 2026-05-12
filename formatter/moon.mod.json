@@ -1,0 +1,21 @@
+{
+  "name": "moonbitlang/formatter",
+  "version": "0.1.5",
+  "deps": {
+    "moonbitlang/x": "0.4.38",
+    "Yoorkin/ArgParser": "0.2.0",
+    "moonbitlang/parser": "0.2.5",
+    "moonbitlang/yacc": "0.7.7",
+    "Yoorkin/prettyprinter": "0.4.8"
+  },
+  "readme": "README.md",
+  "repository": "https://github.com/moonbitlang/formatter",
+  "license": "Apache-2.0",
+  "keywords": [
+    "MoonBit",
+    "formatter",
+    "prettifier",
+    "AST"
+  ],
+  "description": "code prettifier for MoonBit"
+}

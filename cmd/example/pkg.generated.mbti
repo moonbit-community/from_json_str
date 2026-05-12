@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "username/from_json_str/cmd/example"
+
+import {
+  "username/from_json_str",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct GeneratedBox[T] {
+  x : T
+  name : String
+}
+pub impl[T : Show] Show for GeneratedBox[T]
+pub impl[T : @from_json_str.FromJson] @from_json_str.FromJson for GeneratedBox[T]
+
+pub(all) enum GeneratedExpr {
+  Done
+  Val(Int)
+  Add(GeneratedExpr, GeneratedExpr)
+}
+pub impl @from_json_str.FromJson for GeneratedExpr
+
+pub(all) struct GeneratedPair[T](T, String)
+pub impl[T : @from_json_str.FromJson] @from_json_str.FromJson for GeneratedPair[T]
+
+// Type aliases
+
+// Traits
+
