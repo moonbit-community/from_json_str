@@ -9,14 +9,15 @@ The package defines a local `FromJson` trait with two paths:
 - `decode_json(Decoder, JsonPath)` for direct decoding from a JSON string.
 
 The `codegen` package is a metaprogramming prototype. It recognizes
-`#json.from_json_str` on record structs, tuple structs, and enums, then
-generates both `from_json` and streaming `decode_json` impls by constructing
-`moonbitlang/parser/syntax` AST nodes directly. `cmd/example` wires this
-generator through a Wasmer pre-build step.
+`#json.from_json_str` on record structs, tuple structs, enums, and suberrors,
+then generates both `from_json` and streaming `decode_json` impls by
+constructing `moonbitlang/parser/syntax` AST nodes directly. `cmd/example`
+wires this generator through a Wasmer pre-build step.
 
 The generated output for the example lives in
 [`cmd/example/output.mbt`](cmd/example/output.mbt). It shows the exact
-`FromJson` impls emitted for a record struct, tuple struct, and enum.
+`FromJson` impls emitted for records, tuple structs, enums with named payloads,
+and suberrors.
 
 ## Decoder API used by generated code
 
@@ -46,6 +47,16 @@ pub fn Decoder::skip_value(Self, JsonPath) -> Unit raise JsonDecodeError
 can build an intermediate `Json` and call the existing `from_json` method.
 Derived implementations should normally use the typed readers and container
 iteration APIs directly.
+
+The prototype follows the compiler's current JSON payload shape for product and
+sum declarations:
+
+- `struct S { x : Int }` decodes from an object.
+- `struct S(Int, String)` decodes from `["S", ...]`.
+- `enum E { A; B(Int); C(x~ : Int, String) }` decodes from `"A"`,
+  `["B", ...]`, or `["C", <positional fields>, {"x": ...}]`.
+- `suberror` declarations use the same plain-string or tagged-array shape as
+  enum constructors.
 
 This workspace also includes a local checkout of `moonbitlang/formatter` so the
 prototype can use the formatter fix for `let mut` expressions emitted from AST.

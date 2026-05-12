@@ -23,3 +23,23 @@ test "generated enum streaming FromJson impl" {
   )
   guard value is Add(Val(1), Done) else { fail("expected Add(Val(1), Done)") }
 }
+
+///|
+test "generated named enum streaming FromJson impl" {
+  let value : GeneratedNamedExpr = @from_json_str.from_str(
+    "[\"Named\", \"payload\", {\"ignored\": true, \"x\": 1, \"y\": 2.5}]",
+  )
+  guard value is Named(x=1, "payload", y=2.5) else {
+    fail("expected Named(x=1, \"payload\", y=2.5)")
+  }
+}
+
+///|
+test "generated suberror streaming FromJson impl" {
+  let value : GeneratedProblem = @from_json_str.from_str(
+    "[\"Mixed\", \"payload\", {\"x\": 1}]",
+  )
+  guard value is Mixed(x=1, "payload") else {
+    fail("expected Mixed(x=1, \"payload\")")
+  }
+}

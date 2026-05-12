@@ -213,6 +213,50 @@ test "derive #json.from_json_str for enum" {
 }
 
 ///|
+test "derive #json.from_json_str for named enum payload" {
+  let source =
+    #|#json.from_json_str
+    #|pub(all) enum Expr {
+    #|  Mixed(x~ : Int, String, y~ : Double)
+    #|}
+  let generated = derive_from_json_str(parse_source(source))
+  let formatted = @formatter.impls_to_string(generated)
+  inspect(formatted.contains("[\"Mixed\", json1, named_json]"), content="true")
+  inspect(
+    formatted.contains("path.add_index(2).add_key(\"x\")"),
+    content="true",
+  )
+  inspect(
+    formatted.contains("path.add_index(2).add_key(\"y\")"),
+    content="true",
+  )
+  inspect(formatted.contains("Mixed(x=arg0, arg1, y=arg2)"), content="true")
+  inspect(
+    formatted.contains("@from_json_str.Payload(\"Mixed\")"),
+    content="true",
+  )
+}
+
+///|
+test "derive #json.from_json_str for suberror" {
+  let source =
+    #|#json.from_json_str
+    #|pub(all) suberror Problem {
+    #|  Finished
+    #|  Bad(Int)
+    #|  Mixed(x~ : Int, String)
+    #|}
+  let generated = derive_from_json_str(parse_source(source))
+  let formatted = @formatter.impls_to_string(generated)
+  inspect(formatted.contains("for Problem with from_json"), content="true")
+  inspect(formatted.contains("\"Finished\" => Finished"), content="true")
+  inspect(formatted.contains("[\"Bad\", json0]"), content="true")
+  inspect(formatted.contains("Bad(arg0)"), content="true")
+  inspect(formatted.contains("[\"Mixed\", json1, named_json]"), content="true")
+  inspect(formatted.contains("Mixed(x=arg0, arg1)"), content="true")
+}
+
+///|
 test "derive rejects unsupported declaration shapes" {
   expect_derive_failure(
     (
@@ -234,15 +278,6 @@ test "derive rejects unsupported declaration shapes" {
       #|extern type Extern
     ),
     "from_json_str derive does not support extern types",
-  )
-  expect_derive_failure(
-    (
-      #|#json.from_json_str
-      #|suberror DecodeError {
-      #|  DecodeError(String)
-      #|}
-    ),
-    "from_json_str derive does not support error types",
   )
   expect_derive_failure(
     (

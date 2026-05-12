@@ -8,6 +8,12 @@ import {
 // Values
 
 // Errors
+pub(all) suberror GeneratedProblem {
+  Finished
+  Bad(Int)
+  Mixed(x~ : Int, String)
+}
+pub impl @from_json_str.FromJson for GeneratedProblem
 
 // Types and methods
 pub(all) struct GeneratedBox[T] {
@@ -23,6 +29,11 @@ pub(all) enum GeneratedExpr {
   Add(GeneratedExpr, GeneratedExpr)
 }
 pub impl @from_json_str.FromJson for GeneratedExpr
+
+pub(all) enum GeneratedNamedExpr {
+  Named(x~ : Int, String, y~ : Double)
+}
+pub impl @from_json_str.FromJson for GeneratedNamedExpr
 
 pub(all) struct GeneratedPair[T](T, String)
 pub impl[T : @from_json_str.FromJson] @from_json_str.FromJson for GeneratedPair[T]

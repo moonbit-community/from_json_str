@@ -315,44 +315,61 @@ fn e_record(fields : Array[String]) -> @syntax.Expr {
 
 ///|
 fn e_raise_decode_error(message : String) -> @syntax.Expr {
+  e_raise_decode_error_at(e_id("path"), message)
+}
+
+///|
+fn e_raise_decode_error_at(
+  path_expr : @syntax.Expr,
+  message : String,
+) -> @syntax.Expr {
   Raise(
     err_value=e_apply(e_constr("JsonDecodeError", pkg=RUNTIME), [
-      e_tuple([e_id("path"), e_string(message)]),
+      e_tuple([path_expr, e_string(message)]),
     ]),
     loc~,
   )
 }
 
 ///|
+fn e_path_index(index : Int) -> @syntax.Expr {
+  e_call_method(e_id("path"), "add_index", [e_int(index)])
+}
+
+///|
+fn e_path_key(base_path : @syntax.Expr, key : String) -> @syntax.Expr {
+  e_call_method(base_path, "add_key", [e_string(key)])
+}
+
+///|
+fn e_from_json_at_path(
+  value : @syntax.Expr,
+  path_expr : @syntax.Expr,
+) -> @syntax.Expr {
+  e_apply(e_method("FromJson", "from_json", pkg=RUNTIME), [value, path_expr])
+}
+
+///|
 fn e_from_json_call(value : @syntax.Expr, key : String) -> @syntax.Expr {
-  e_apply(e_method("FromJson", "from_json", pkg=RUNTIME), [
-    value,
-    e_call_method(e_id("path"), "add_key", [e_string(key)]),
-  ])
+  e_from_json_at_path(value, e_path_key(e_id("path"), key))
 }
 
 ///|
 fn e_from_json_index_call(value : @syntax.Expr, index : Int) -> @syntax.Expr {
-  e_apply(e_method("FromJson", "from_json", pkg=RUNTIME), [
-    value,
-    e_call_method(e_id("path"), "add_index", [e_int(index)]),
-  ])
+  e_from_json_at_path(value, e_path_index(index))
 }
 
 ///|
-fn e_decode_json_call(key : String) -> @syntax.Expr {
+fn e_decode_json_at_path(path_expr : @syntax.Expr) -> @syntax.Expr {
   e_apply(e_method("FromJson", "decode_json", pkg=RUNTIME), [
     e_id("decoder"),
-    e_call_method(e_id("path"), "add_key", [e_string(key)]),
+    path_expr,
   ])
 }
 
 ///|
 fn e_decode_json_index_call(index : Int) -> @syntax.Expr {
-  e_apply(e_method("FromJson", "decode_json", pkg=RUNTIME), [
-    e_id("decoder"),
-    e_call_method(e_id("path"), "add_index", [e_int(index)]),
-  ])
+  e_decode_json_at_path(e_path_index(index))
 }
 
 ///|
@@ -397,7 +414,12 @@ fn e_let_mut(
 
 ///|
 fn e_begin_object() -> @syntax.Expr {
-  e_call_method(e_id("decoder"), "begin_object", [e_id("path")])
+  e_begin_object_at(e_id("path"))
+}
+
+///|
+fn e_begin_object_at(path_expr : @syntax.Expr) -> @syntax.Expr {
+  e_call_method(e_id("decoder"), "begin_object", [path_expr])
 }
 
 ///|
@@ -412,13 +434,23 @@ fn e_next_array_value() -> @syntax.Expr {
 
 ///|
 fn e_next_key() -> @syntax.Expr {
-  e_call_method(e_id("decoder"), "next_object_key", [e_id("path")])
+  e_next_key_at(e_id("path"))
+}
+
+///|
+fn e_next_key_at(path_expr : @syntax.Expr) -> @syntax.Expr {
+  e_call_method(e_id("decoder"), "next_object_key", [path_expr])
 }
 
 ///|
 fn e_skip_unknown() -> @syntax.Expr {
+  e_skip_unknown_at(e_id("path"))
+}
+
+///|
+fn e_skip_unknown_at(path_expr : @syntax.Expr) -> @syntax.Expr {
   e_seq(
-    [e_call_method(e_id("decoder"), "skip_value", [e_id("path")])],
+    [e_call_method(e_id("decoder"), "skip_value", [path_expr])],
     e_continue(),
   )
 }
@@ -558,10 +590,24 @@ fn derive_from_json_impl(
 
 ///|
 fn e_decode_key_case(name : String) -> @syntax.Case {
+  e_decode_key_case_at(name, name, e_id("path"))
+}
+
+///|
+fn e_decode_key_case_at(
+  key_name : String,
+  target_name : String,
+  base_path : @syntax.Expr,
+) -> @syntax.Case {
   p_case(
-    p_constr("Some", args=[p_string(name)]),
+    p_constr("Some", args=[p_string(key_name)]),
     e_seq(
-      [e_assign(name, e_option_some(e_decode_json_call(name)))],
+      [
+        e_assign(
+          target_name,
+          e_option_some(e_decode_json_at_path(e_path_key(base_path, key_name))),
+        ),
+      ],
       e_continue(),
     ),
   )
@@ -569,11 +615,24 @@ fn e_decode_key_case(name : String) -> @syntax.Case {
 
 ///|
 fn e_bind_required_field(name : String, body : @syntax.Expr) -> @syntax.Expr {
+  e_bind_required_field_at(name, name, e_id("path"), body)
+}
+
+///|
+fn e_bind_required_field_at(
+  var_name : String,
+  field_name : String,
+  path_expr : @syntax.Expr,
+  body : @syntax.Expr,
+) -> @syntax.Expr {
   e_let(
-    p_var(name),
-    e_match(e_id(name), [
+    p_var(var_name),
+    e_match(e_id(var_name), [
       p_case(p_constr("Some", args=[p_var("value")]), e_id("value")),
-      p_case(p_constr("None"), e_raise_decode_error("Missing field \{name}")),
+      p_case(
+        p_constr("None"),
+        e_raise_decode_error_at(path_expr, "Missing field \{field_name}"),
+      ),
     ]),
     body,
   )
@@ -626,24 +685,170 @@ fn e_construct_positional(
 }
 
 ///|
-fn e_construct_enum(
-  name : String,
+priv struct CtorLayout {
+  name : String
+  labels : Array[String?]
+}
+
+///|
+fn layout_from_constr(constr : @syntax.ConstrDecl) -> CtorLayout {
+  let params = constr_params(constr)
+  {
+    name: constr.name.name,
+    labels: params.map(param => {
+      match param.label {
+        None => None
+        Some(label) => Some(label.name)
+      }
+    }),
+  }
+}
+
+///|
+fn positional_count(layout : CtorLayout) -> Int {
+  let mut count = 0
+  for label in layout.labels {
+    if label is None {
+      count += 1
+    }
+  }
+  count
+}
+
+///|
+fn has_named_params(layout : CtorLayout) -> Bool {
+  for label in layout.labels {
+    if label is Some(_) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn named_object_index(layout : CtorLayout) -> Int {
+  1 + positional_count(layout)
+}
+
+///|
+fn e_construct_layout(
+  layout : CtorLayout,
   arg_names : Array[String],
-  params : Array[@syntax.ConstrParam],
 ) -> @syntax.Expr {
   if arg_names.is_empty() {
-    e_constr(name)
+    e_constr(layout.name)
   } else {
     e_apply_with_kinds(
-      e_constr(name),
+      e_constr(layout.name),
       arg_names.mapi((i, name) => {
-        let kind = match params[i].label {
+        let kind = match layout.labels[i] {
           None => @syntax.ArgumentKind::Positional
-          Some(label) => @syntax.ArgumentKind::Labelled(label)
+          Some(label_name) => @syntax.ArgumentKind::Labelled(label(label_name))
         }
         (e_id(name), kind)
       }),
     )
+  }
+}
+
+///|
+fn layout_json_pattern(layout : CtorLayout) -> @syntax.Pattern {
+  if layout.labels.is_empty() {
+    p_string(layout.name)
+  } else {
+    let patterns = [p_string(layout.name)]
+    for i in 0..<layout.labels.length() {
+      match layout.labels[i] {
+        None => patterns.push(p_var("json\{i}"))
+        Some(_) => ()
+      }
+    }
+    if has_named_params(layout) {
+      patterns.push(p_var("named_json"))
+    }
+    p_array(patterns)
+  }
+}
+
+///|
+fn fold_layout_positional_from_json_bindings(
+  layout : CtorLayout,
+  arg_names : Array[String],
+  last : @syntax.Expr,
+) -> @syntax.Expr {
+  let bindings = []
+  let mut json_index = 1
+  for i in 0..<layout.labels.length() {
+    match layout.labels[i] {
+      None => {
+        bindings.push(
+          (
+            arg_names[i],
+            e_from_json_at_path(e_id("json\{i}"), e_path_index(json_index)),
+          ),
+        )
+        json_index += 1
+      }
+      Some(_) => ()
+    }
+  }
+  fold_lets(bindings, last)
+}
+
+///|
+fn e_named_object_from_json(
+  layout : CtorLayout,
+  arg_names : Array[String],
+  body : @syntax.Expr,
+) -> @syntax.Expr {
+  if !has_named_params(layout) {
+    body
+  } else {
+    let path_expr = e_path_index(named_object_index(layout))
+    let bindings = []
+    for i in 0..<layout.labels.length() {
+      match layout.labels[i] {
+        None => ()
+        Some(field_name) =>
+          bindings.push(
+            (
+              arg_names[i],
+              e_match(
+                e_call_method(e_id("named_obj"), "get", [e_string(field_name)]),
+                [
+                  p_case(
+                    p_constr("Some", args=[p_var("value")]),
+                    e_from_json_at_path(
+                      e_id("value"),
+                      e_path_key(path_expr, field_name),
+                    ),
+                  ),
+                  p_case(
+                    p_constr("None"),
+                    e_raise_decode_error_at(
+                      e_path_key(path_expr, field_name),
+                      "Missing field \{field_name}",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+      }
+    }
+    e_match(e_id("named_json"), [
+      p_case(
+        p_constr("Object", args=[p_var("named_obj")]),
+        fold_lets(bindings, body),
+      ),
+      p_case(
+        p_any(),
+        e_raise_decode_error_at(
+          path_expr,
+          "\{layout.name}::from_json: expected named payload object",
+        ),
+      ),
+    ])
   }
 }
 
@@ -690,6 +895,91 @@ fn e_stream_payload_body(
       ),
       body,
     )
+  }
+  body
+}
+
+///|
+fn e_decode_named_payload_object(
+  layout : CtorLayout,
+  arg_names : Array[String],
+  named_path : @syntax.Expr,
+  body : @syntax.Expr,
+) -> @syntax.Expr {
+  let cases = [p_case(p_constr("None"), e_break())]
+  for i in 0..<layout.labels.length() {
+    match layout.labels[i] {
+      None => ()
+      Some(field_name) =>
+        cases.push(e_decode_key_case_at(field_name, arg_names[i], named_path))
+    }
+  }
+  cases.push(
+    p_case(p_constr("Some", args=[p_any()]), e_skip_unknown_at(named_path)),
+  )
+  let loop_expr = e_while_true(e_match(e_next_key_at(named_path), cases))
+  let mut result = body
+  for i = layout.labels.length() - 1; i >= 0; i = i - 1 {
+    match layout.labels[i] {
+      None => ()
+      Some(field_name) =>
+        result = e_bind_required_field_at(
+          arg_names[i],
+          field_name,
+          e_path_key(named_path, field_name),
+          result,
+        )
+    }
+  }
+  result = e_seq([e_begin_object_at(named_path), loop_expr], result)
+  for i = layout.labels.length() - 1; i >= 0; i = i - 1 {
+    match layout.labels[i] {
+      None => ()
+      Some(_) => result = e_let_mut(arg_names[i], e_constr("None"), result)
+    }
+  }
+  result
+}
+
+///|
+fn e_stream_layout_payload_body(
+  layout : CtorLayout,
+  arg_names : Array[String],
+  result_expr : @syntax.Expr,
+  missing_prefix : String,
+  too_many_message : String,
+) -> @syntax.Expr {
+  let mut body = e_if(
+    e_next_array_value(),
+    e_raise_decode_error(too_many_message),
+    result_expr,
+  )
+  if has_named_params(layout) {
+    let named_path = e_path_index(named_object_index(layout))
+    body = e_if(
+      e_next_array_value(),
+      e_decode_named_payload_object(layout, arg_names, named_path, body),
+      e_raise_decode_error("\{missing_prefix} named payload"),
+    )
+  }
+  let mut positional_json_index = positional_count(layout)
+  for i = layout.labels.length() - 1; i >= 0; i = i - 1 {
+    match layout.labels[i] {
+      None => {
+        let json_index = positional_json_index
+        body = e_let(
+          p_var(arg_names[i]),
+          e_if(
+            e_next_array_value(),
+            e_decode_json_index_call(json_index),
+            e_raise_decode_error("\{missing_prefix} \{i}"),
+          ),
+          body,
+        )
+        positional_json_index -= 1
+      }
+      Some(_) => ()
+    }
   }
   body
 }
@@ -774,33 +1064,48 @@ fn constr_params(constr : @syntax.ConstrDecl) -> Array[@syntax.ConstrParam] {
 }
 
 ///|
-fn derive_enum_from_json_impl(
-  decl : @syntax.TypeDecl,
+fn layouts_from_constrs(
   constrs : List[@syntax.ConstrDecl],
+) -> Array[CtorLayout] {
+  constrs.map(layout_from_constr).to_array()
+}
+
+///|
+fn layouts_from_error(
+  name : String,
+  decl : @syntax.ExceptionDecl,
+) -> Array[CtorLayout] {
+  match decl {
+    NoPayload => [{ name, labels: [] }]
+    SinglePayload(_) => [{ name, labels: [None] }]
+    EnumPayload(constrs) => layouts_from_constrs(constrs)
+  }
+}
+
+///|
+fn derive_sum_from_json_impl(
+  decl : @syntax.TypeDecl,
+  layouts : Array[CtorLayout],
   private~ : Bool,
 ) -> @syntax.Impl raise {
   let params = type_param_names(decl.params)
   let cases = []
-  for constr in constrs {
-    let name = constr.name.name
-    let params = constr_params(constr)
-    if params.is_empty() {
-      cases.push(p_case(p_string(name), e_constr(name)))
+  for layout in layouts {
+    if layout.labels.is_empty() {
+      cases.push(p_case(p_string(layout.name), e_constr(layout.name)))
     } else {
-      let json_names = index_names("json", params.length())
-      let arg_names = index_names("arg", params.length())
-      let patterns = [p_string(name)]
-      for name in json_names {
-        patterns.push(p_var(name))
-      }
+      let arg_names = index_names("arg", layout.labels.length())
       cases.push(
         p_case(
-          p_array(patterns),
-          fold_decode_bindings(
-            json_names,
+          layout_json_pattern(layout),
+          fold_layout_positional_from_json_bindings(
+            layout,
             arg_names,
-            1,
-            e_construct_enum(name, arg_names, params),
+            e_named_object_from_json(
+              layout,
+              arg_names,
+              e_construct_layout(layout, arg_names),
+            ),
           ),
         ),
       )
@@ -816,32 +1121,30 @@ fn derive_enum_from_json_impl(
 }
 
 ///|
-fn derive_enum_decode_json_impl(
+fn derive_sum_decode_json_impl(
   decl : @syntax.TypeDecl,
-  constrs : List[@syntax.ConstrDecl],
+  layouts : Array[CtorLayout],
   private~ : Bool,
 ) -> @syntax.Impl raise {
   let params = type_param_names(decl.params)
   let cases = []
-  for constr in constrs {
-    let name = constr.name.name
-    let params = constr_params(constr)
-    if params.is_empty() {
+  for layout in layouts {
+    if layout.labels.is_empty() {
       cases.push(
         p_case(
-          p_constr("Plain", args=[p_string(name)], pkg=RUNTIME),
-          e_constr(name),
+          p_constr("Plain", args=[p_string(layout.name)], pkg=RUNTIME),
+          e_constr(layout.name),
         ),
       )
     } else {
-      let arg_names = index_names("arg", params.length())
+      let arg_names = index_names("arg", layout.labels.length())
       cases.push(
         p_case(
-          p_constr("Payload", args=[p_string(name)], pkg=RUNTIME),
-          e_stream_payload_body(
+          p_constr("Payload", args=[p_string(layout.name)], pkg=RUNTIME),
+          e_stream_layout_payload_body(
+            layout,
             arg_names,
-            1,
-            e_construct_enum(name, arg_names, params),
+            e_construct_layout(layout, arg_names),
             "\{decl.tycon}::decode_json: missing constructor field",
             "\{decl.tycon}::decode_json: too many constructor fields",
           ),
@@ -881,13 +1184,29 @@ fn derive_decl(
         derive_tuple_decode_json_impl(decl, tys, private~),
       ]
     Alias(_) => fail("from_json_str derive does not support type aliases")
-    Error(_) => fail("from_json_str derive does not support error types")
+    Error(error_decl) =>
+      [
+        derive_sum_from_json_impl(
+          decl,
+          layouts_from_error(decl.tycon, error_decl),
+          private~,
+        ),
+        derive_sum_decode_json_impl(
+          decl,
+          layouts_from_error(decl.tycon, error_decl),
+          private~,
+        ),
+      ]
     Extern => fail("from_json_str derive does not support extern types")
     Abstract => fail("from_json_str derive does not support abstract types")
     Variant(constrs) =>
       [
-        derive_enum_from_json_impl(decl, constrs, private~),
-        derive_enum_decode_json_impl(decl, constrs, private~),
+        derive_sum_from_json_impl(decl, layouts_from_constrs(constrs), private~),
+        derive_sum_decode_json_impl(
+          decl,
+          layouts_from_constrs(constrs),
+          private~,
+        ),
       ]
   }
 }

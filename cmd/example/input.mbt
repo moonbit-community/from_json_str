@@ -25,3 +25,17 @@ pub(all) enum GeneratedExpr {
   Val(Int)
   Add(GeneratedExpr, GeneratedExpr)
 }
+
+///|
+#json.from_json_str
+pub(all) enum GeneratedNamedExpr {
+  Named(x~ : Int, String, y~ : Double)
+}
+
+///|
+#json.from_json_str
+pub(all) suberror GeneratedProblem {
+  Finished
+  Bad(Int)
+  Mixed(x~ : Int, String)
+}
