@@ -4,7 +4,7 @@ import {
   "moonbitlang/formatter",
   "moonbitlang/parser",
   "peter-jerry-ye/wasi",
-  "username/from_json_str/codegen" @from_json_str_codegen,
+  "moonbit-community/from_json_str/codegen" @from_json_str_codegen,
 }
 
 options(

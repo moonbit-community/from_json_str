@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "username/from_json_str"
+package "moonbit-community/from_json_str"
 
 import {
   "moonbitlang/core/debug",
@@ -47,8 +47,8 @@ pub impl Show for JsonPath
 pub(all) struct S[T] {
   x : T
 } derive(Eq, @debug.Debug)
-pub impl[T : Show] Show for S[T]
 pub impl[T : FromJson] FromJson for S[T]
+pub impl[T : Show] Show for S[T]
 
 pub(all) enum VariantTag {
   Plain(String)

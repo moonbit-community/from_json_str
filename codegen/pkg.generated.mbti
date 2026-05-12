@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "username/from_json_str/codegen"
+package "moonbit-community/from_json_str/codegen"
 
 import {
   "moonbitlang/core/list",

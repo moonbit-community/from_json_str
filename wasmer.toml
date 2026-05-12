@@ -1,11 +1,11 @@
 [package]
-name = 'username/from_json_str_codegen'
+name = 'moonbit-community/from_json_str_codegen'
 version = '0.1.0'
 description = 'Prototype streaming FromJson deriver'
 
 [[module]]
 name = 'from_json_str_codegen'
-source = './_build/wasm/debug/build/username/from_json_str/cmd/codegen/codegen.wasm'
+source = './_build/wasm/debug/build/moonbit-community/from_json_str/cmd/codegen/codegen.wasm'
 abi = 'wasi'
 
 [module.interfaces]

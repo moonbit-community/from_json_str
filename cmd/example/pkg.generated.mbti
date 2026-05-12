@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "username/from_json_str/cmd/example"
+package "moonbit-community/from_json_str/cmd/example"
 
 import {
-  "username/from_json_str",
+  "moonbit-community/from_json_str",
 }
 
 // Values
@@ -14,8 +14,8 @@ pub(all) struct GeneratedBox[T] {
   x : T
   name : String
 }
-pub impl[T : Show] Show for GeneratedBox[T]
 pub impl[T : @from_json_str.FromJson] @from_json_str.FromJson for GeneratedBox[T]
+pub impl[T : Show] Show for GeneratedBox[T]
 
 pub(all) enum GeneratedExpr {
   Done

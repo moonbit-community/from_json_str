@@ -1,5 +1,5 @@
 import {
-  "username/from_json_str" @lib,
+  "moonbit-community/from_json_str" @lib,
 }
 
 options(
